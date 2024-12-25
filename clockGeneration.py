@@ -8,6 +8,7 @@ import numpy.typing as npt
 
 from consts.image import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
                           CLK_HAND_RADII, CLK_HAND_THICKNESS, WHITE_HALO_COLOR, CLK_HAND_COLOR)
+from exceptions import FailedToResizeException, FailedToLoadFileException
 
 
 def _get_angles(clk_time) -> list[float]:
@@ -41,8 +42,18 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
     :param clk_time: The time the clock in the generated image will show.
     :return: The image, as a numpy array.
     """
-    clk_img = cv.imread(CLOCK_IMG_PATH)
-    img = cv.resize(clk_img, (IMG_WIDTH, IMG_HEIGHT))
+    try:
+        clk_img = cv.imread(CLOCK_IMG_PATH)
+    except cv.error as e:
+        raise FailedToLoadFileException(e)
+    if clk_img is None:
+        raise FailedToLoadFileException("Failed to load the clock image.")
+
+    try:
+        img = cv.resize(clk_img, (IMG_WIDTH, IMG_HEIGHT))
+    except cv.error as e:
+        raise FailedToResizeException(e)
+
     img_center = (int(IMG_WIDTH / 2), int(IMG_HEIGHT / 2))
     hr_angle, mn_angle, sec_angle = _get_angles(clk_time)
 
