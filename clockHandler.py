@@ -1,19 +1,57 @@
+import time
+from time import struct_time
+
 import cv2 as cv
 import numpy as np
 import numpy.typing as npt
 
-from time import struct_time
+from math import sin, cos, pi
+from consts.image import IMG_SHAPE, IMG_WIDTH, IMG_HEIGHT, CLOCK_BASE_COLOR
 
 
-def generate_clock_image(time: struct_time) -> npt.NDArray[np.int_]:
+
+def _get_angles(clk_time):
     """
-    Generate a JPEG image of an analog clock
-    showing the given time.
 
-    :param time: The time the clock in the generated image will show.
+    :param clk_time:
+    :return:
+    """
+
+    hr, mn, sec = map(int, time.strftime("%H %M %S", clk_time).split())
+    return map(lambda val: (val/24)*2*pi - pi/2, [hr, mn, sec])
+
+
+def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
+    """
+    Generate a JPEG image of an analog clock,
+    showing the given time. The image is of size IMG_WIDTH x IMG_HEIGHT.
+
+    :param clk_time: The time the clock in the generated image will show.
     :return: The image, as a numpy array.
     """
-    pass
+    img = np.zeros(shape=IMG_SHAPE,
+                   dtype=np.int16)
+    img_center = (int(IMG_WIDTH/2), int(IMG_HEIGHT/2))
+    cv.circle(img,
+              img_center,
+              int(IMG_WIDTH/2)-1,
+              CLOCK_BASE_COLOR,
+              -1)
+
+    # -pi/2 is required to start relative to 00:00 and not 03:00
+    hr_angle, mn_angle, sec_angle = _get_angles(clk_time)
+    r=int(IMG_WIDTH/2)
+    # Hour
+    for angle,radius in zip([hr_angle, mn_angle, sec_angle],
+                            [255/3,255/2,255]):
+        cv.line(img,
+                img_center,
+                (int(img_center[0]+radius*cos(angle)),
+                 int(img_center[1]+radius*sin(angle))),
+                (255, 255, 255),
+                10)
+
+    return img
 
 
 def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:

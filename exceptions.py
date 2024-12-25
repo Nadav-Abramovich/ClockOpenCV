@@ -1,0 +1,2 @@
+class InvalidImageSizeException(Exception):
+    pass
