@@ -118,8 +118,8 @@ def _find_angles_in_radius(side_length: float, bw_img: npt.NDArray[np.int_]) -> 
                 x = int(sum_x / amount)
                 y = int(sum_y / amount)
                 val = (atan2(y - side_length, x - side_length) + pi / 2) / 2 / pi * 60
-                # Fourth quadrant of they xy plane (9 - 12)
-                # The above function doesnt work in this case as the atan returns a value
+                # in case our x,y is in the fourth quadrant of the xy plane (hours 9 - 12)
+                # The above function doesn't work in this case as the atan returns a value
                 # between -pi to -pi/2 and adding pi/2 to it still gives a negative value / hour.
                 if val < 0:
                     val = (atan2(y - side_length, x - side_length) + (3 * pi / 2)) / 2 / pi * 60 + 30
@@ -174,11 +174,13 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
     count = 3 # We expect 3 clock hands inside the first circle
     last_found = []
     hour, minute, sec = -1, -1, -1
-    # NOTE: This is not very good, as these are pretty random magic numbers.
+
+    # NOTE: This is not a good for loop, as these are pretty random magic numbers.
     #       The problem is that the clock is round, and yet im scanning around
     #       in a rectangle, so a clock hand might fit or not fit inside a rectangle
     #       depending on the hour. This range seems to work with the clock hand radii
-    #       and clock size im using.
+    #       and clock size im using. A more precise and general formual for this range
+    #       could be found.
     #       Also - We could use a sort of binary search for the values
     #       where there is a change of 1 in the found angles length,
     #       so we would only have to find the angles O(log n) times
@@ -193,6 +195,8 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
                 break
             hour = _find_furthest_number_in_lists(last_found, found)
             if hour is not None: # None means two clock hands overlap...
-                hour /= 5 # hour was in range 0..60 like min and seconds. This fixes it.
+                # hour is in range 0..60 like min and seconds.
+                # this scales it correctly.
+                hour /= 5
         last_found = found
     return time.strptime("{} {} {}".format(int(hour), int(minute), int(sec)), "%H %M %S")
