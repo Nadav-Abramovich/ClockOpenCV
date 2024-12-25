@@ -12,7 +12,7 @@ CLOCK_IMG_PATH = "clk_470x470.jpg"
 
 # Hour, Minute, Second
 CLK_HAND_RADII = [100, 145, 250]
-CLK_HAND_COLORS = [(0, 0, 0), (0, 0, 0), (0, 0, 0)]
+CLK_HAND_COLOR = (0, 0, 0)
 CLK_HAND_THICKNESS = [20, 15, 10]
 
 WHITE_HALO_COLOR = (255, 255, 255)

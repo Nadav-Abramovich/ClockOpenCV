@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from consts.image import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
-                          CLK_HAND_RADII, CLK_HAND_COLORS, CLK_HAND_THICKNESS, WHITE_HALO_COLOR)
+                          CLK_HAND_RADII, CLK_HAND_THICKNESS, WHITE_HALO_COLOR, CLK_HAND_COLOR)
 
 
 def _get_angles(clk_time) -> list[float]:
@@ -54,10 +54,9 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
     #                        the objects manually anyway (as these are arbitrary consts that
     #                        are different to each clock hand) I decided against it in this
     #                        case
-    for angle, radius, color, thickness in zip([hr_angle, mn_angle, sec_angle],
-                                               CLK_HAND_RADII,
-                                               CLK_HAND_COLORS,
-                                               CLK_HAND_THICKNESS):
+    for angle, radius, thickness in zip([hr_angle, mn_angle, sec_angle],
+                                        CLK_HAND_RADII,
+                                        CLK_HAND_THICKNESS):
         # This white "halo" around the clock hand is added in order to
         # let my code handle cases where the clock hands overlap.
         cv.line(img,
@@ -71,7 +70,7 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
                 img_center,
                 (int(img_center[0] + radius * cos(angle)),
                  int(img_center[1] + radius * sin(angle))),
-                color,
+                CLK_HAND_COLOR,
                 thickness)
 
     return img
