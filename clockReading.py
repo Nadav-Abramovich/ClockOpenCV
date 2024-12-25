@@ -1,81 +1,13 @@
 import time
-from math import sin, cos, pi, atan2
+from math import pi, atan2
 from time import struct_time
 
 import cv2 as cv
 import numpy as np
 import numpy.typing as npt
 
-from consts.image import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
-                          CLK_HAND_RADII, CLK_HAND_COLORS, CLK_HAND_THICKNESS, WHITE_HALO_COLOR)
-
-
-def _get_angles(clk_time) -> list[float]:
-    """
-    This function calculates the angles of each clock hand relative
-    to the 00:00 hour, based on the given clk_time.
-    :param clk_time: The time for the clock to display.
-    :return: [hour_hand_angle, min_hand_angle, sec_hand_angle]
-    """
-    hr, mn, sec = map(int, time.strftime("%I %M %S", clk_time).split())
-    # Allow the hour and minute hands to move non-whole values
-    hr += mn / 60
-    mn += sec / 60
-
-    # hr*5 is for making hours the same scale [0..60) as mn, and sec.
-    angles = list(map(lambda val: val * 2 * pi / 60, [hr * 5, mn, sec]))
-
-    # We have a phase shift of +2pi because we start
-    # our measurements from the 12th hour, but the unit circle
-    # starts from the 3rd hour.  This should fix it
-    # so our values will work well with sin & cos
-    angles = [angle - pi / 2 for angle in angles]
-    return angles
-
-
-def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
-    """
-    Generate a JPEG image of an analog clock,
-    showing the given time. The image is of size IMG_WIDTH x IMG_HEIGHT.
-
-    :param clk_time: The time the clock in the generated image will show.
-    :return: The image, as a numpy array.
-    """
-    clk_img = cv.imread(CLOCK_IMG_PATH)
-    img = cv.resize(clk_img, (IMG_WIDTH, IMG_HEIGHT))
-    img_center = (int(IMG_WIDTH / 2), int(IMG_HEIGHT / 2))
-    hr_angle, mn_angle, sec_angle = _get_angles(clk_time)
-
-    # NOTE for the reviewer: This zip is probably too big, and looks a lil bit ridiculous.
-    #                        I considered making a clockHand class to hold these
-    #                        values instead of this mess. BUT since unlike real code
-    #                        this code will not be further expanded / maintained, and
-    #                        since these values will have to be put inside
-    #                        the objects manually anyway (as these are arbitrary consts that
-    #                        are different to each clock hand) I decided against it in this
-    #                        case
-    for angle, radius, color, thickness in zip([hr_angle, mn_angle, sec_angle],
-                                               CLK_HAND_RADII,
-                                               CLK_HAND_COLORS,
-                                               CLK_HAND_THICKNESS):
-
-        # This white "halo" around the clock hand is added in order to
-        # let my code handle cases where the clock hands overlap.
-        cv.line(img,
-                img_center,
-                (int(img_center[0] + radius * cos(angle)),
-                 int(img_center[1] + radius * sin(angle))),
-                WHITE_HALO_COLOR,
-                thickness+5)
-        # This is the actual clock hand
-        cv.line(img,
-                img_center,
-                (int(img_center[0] + radius * cos(angle)),
-                 int(img_center[1] + radius * sin(angle))),
-                color,
-                thickness)
-
-    return img
+from consts.image import IMG_WIDTH, IMG_HEIGHT
+from exceptions import FailedToReadTimeException
 
 
 def _find_angles_in_radius(side_length: float, bw_img: npt.NDArray[np.int_]) -> list[float]:
@@ -93,21 +25,21 @@ def _find_angles_in_radius(side_length: float, bw_img: npt.NDArray[np.int_]) -> 
                 ]
     # Scanning from top-left in clock-wise order
     relevant_coordinates = (
-            # Top side
-            [(i,0) for i in range(0, 2 * side_length - 1)] +
+        # Top side
+            [(i, 0) for i in range(0, 2 * side_length - 1)] +
             # right side
             [(2 * side_length - 1, i) for i in range(0, 2 * side_length - 1)] +
             # bottom side
             [(i, 2 * side_length - 1) for i in range(2 * side_length - 1, 0, -1)] +
             # left side
-            [(0,i) for i in range(2 * side_length - 1, 0, -1)])
+            [(0, i) for i in range(2 * side_length - 1, 0, -1)])
 
     found = False
-    sum_x, sum_y = 0,0
+    sum_x, sum_y = 0, 0
     amount = 0
     found_angles = []
-    for x,y in relevant_coordinates:
-        if list(sub_image[y,x]) != [255, 255, 255]:
+    for x, y in relevant_coordinates:
+        if list(sub_image[y, x]) != [255, 255, 255]:
             if not found:
                 found = True
             sum_x += x
@@ -129,6 +61,7 @@ def _find_angles_in_radius(side_length: float, bw_img: npt.NDArray[np.int_]) -> 
             sum_y = 0
             amount = 0
     return found_angles
+
 
 def _find_furthest_number_in_lists(large_list: list[float], small_list: list[float]) -> float:
     """
@@ -164,14 +97,14 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
              of the clock (not the hands) to be less black,
              and so theyll be removed when changing into bw image.
              This seemed like a "cheat" solution,
-             So didnt do this, I ended up needing at least
+             So didn't do this, I ended up needing at least
              2 of the clock hands to be smaller much than the numbers
              in radius so there exists a square around the center
              where only 1 clock hand appear but there is no numbers
              in it. This seems like a "cheat" solution also in hindsight.
     """
     ret, bw_img = cv.threshold(img, 127, 255, cv.THRESH_BINARY)
-    count = 3 # We expect 3 clock hands inside the first circle
+    count = 3  # We expect 3 clock hands inside the first circle
     last_found = []
     hour, minute, sec = -1, -1, -1
 
@@ -189,14 +122,17 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
         found = _find_angles_in_radius(i, bw_img)
         if len(found) < count:
             count = len(found)
-            if count == 1: # Only 1 clock hand in the rectangle side
+            if count == 1:  # Only 1 clock hand in the rectangle side
                 minute = _find_furthest_number_in_lists(last_found, found)
                 sec = found[0]
                 break
             hour = _find_furthest_number_in_lists(last_found, found)
-            if hour is not None: # None means two clock hands overlap...
+            if hour is not None:  # None means two clock hands overlap...
                 # hour is in range 0..60 like min and seconds.
                 # this scales it correctly.
                 hour /= 5
+            else:
+                raise FailedToReadTimeException()
+
         last_found = found
     return time.strptime("{} {} {}".format(int(hour), int(minute), int(sec)), "%H %M %S")

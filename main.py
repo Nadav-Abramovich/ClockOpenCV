@@ -5,10 +5,10 @@ Perhaps I won't be very tidy in this module as it isnt part of the final program
 """
 import time
 
-import cv2 as cv
 import matplotlib.pyplot as plt
 
-from clockHandler import generate_clock_image, read_the_time
+from clockGeneration import generate_clock_image
+from clockReading import read_the_time
 
 
 def main():
