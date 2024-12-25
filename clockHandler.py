@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from consts.image import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
-                          CLK_HAND_RADII, CLK_HAND_COLORS, CLK_HAND_THICKNESS)
+                          CLK_HAND_RADII, CLK_HAND_COLORS, CLK_HAND_THICKNESS, WHITE_HALO_COLOR)
 
 
 def _get_angles(clk_time) -> list[float]:
@@ -65,9 +65,9 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
                 img_center,
                 (int(img_center[0] + radius * cos(angle)),
                  int(img_center[1] + radius * sin(angle))),
-                (255,255,255),
+                WHITE_HALO_COLOR,
                 thickness+5)
-
+        # This is the actual clock hand
         cv.line(img,
                 img_center,
                 (int(img_center[0] + radius * cos(angle)),
@@ -178,13 +178,13 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
     # NOTE: This is not a good for loop, as these are pretty random magic numbers.
     #       The problem is that the clock is round, and yet im scanning around
     #       in a rectangle, so a clock hand might fit or not fit inside a rectangle
-    #       depending on the hour. This range seems to work with the clock hand radii
-    #       and clock size im using. A more precise and general formual for this range
-    #       could be found.
+    #       depending on the time. This range seems to work with the clock hand radii
+    #       and clock size im using. A more precise and general
+    #       formula for this range could be found.
     #       Also - We could use a sort of binary search for the values
     #       where there is a change of 1 in the found angles length,
     #       so we would only have to find the angles O(log n) times
-    #       instead of this O(n) implementation. But i didnt bother.
+    #       instead of this O(n) implementation. But I didn't bother.
     for i in range(50, 171):
         found = _find_angles_in_radius(i, bw_img)
         if len(found) < count:
