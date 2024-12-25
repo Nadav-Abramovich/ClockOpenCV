@@ -11,7 +11,7 @@ from clockHandler import generate_clock_image
 
 
 def main():
-    img = generate_clock_image(time.gmtime(time.time()))
+    img = generate_clock_image(time.localtime(time.time()))
     plt.imshow(img)
     plt.show()
 
