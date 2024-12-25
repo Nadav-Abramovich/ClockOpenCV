@@ -24,7 +24,7 @@ def _get_angles(clk_time) -> list[float]:
     mn += sec / 60
 
     # hr*5 is for making hours the same scale [0..60) as mn, and sec.
-    angles = list(map(lambda val: val * 2 * pi / 60, [hr * 5, mn, sec]))
+    angles = list(map(lambda val: val * 2 * pi / 60, [sec, mn, hr * 5]))
 
     # We have a phase shift of +2pi because we start
     # our measurements from the 12th hour, but the unit circle
@@ -55,7 +55,7 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
         raise FailedToResizeException(e)
 
     img_center = (int(IMG_WIDTH / 2), int(IMG_HEIGHT / 2))
-    hr_angle, mn_angle, sec_angle = _get_angles(clk_time)
+    sec_angle, mn_angle, hr_angle = _get_angles(clk_time)
 
     # NOTE for the reviewer: This zip is probably too big, and looks a lil bit ridiculous.
     #                        I considered making a clockHand class to hold these
@@ -65,7 +65,7 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
     #                        the objects manually anyway (as these are arbitrary consts that
     #                        are different to each clock hand) I decided against it in this
     #                        case
-    for angle, radius, thickness in zip([hr_angle, mn_angle, sec_angle],
+    for angle, radius, thickness in zip([sec_angle, mn_angle, hr_angle],
                                         CLK_HAND_RADII,
                                         CLK_HAND_THICKNESS):
         # This white "halo" around the clock hand is added in order to
@@ -75,7 +75,7 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
                 (int(img_center[0] + radius * cos(angle)),
                  int(img_center[1] + radius * sin(angle))),
                 WHITE_HALO_COLOR,
-                thickness + 5)
+                thickness + 20)
         # This is the actual clock hand
         cv.line(img,
                 img_center,

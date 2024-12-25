@@ -6,40 +6,40 @@ import cv2 as cv
 import numpy as np
 import numpy.typing as npt
 
-from consts.image import IMG_WIDTH, IMG_HEIGHT
-from exceptions import FailedToReadTimeException
+from consts.image import IMG_WIDTH, IMG_HEIGHT, CLK_BACKGROUND_COLOR
+from exceptions import FailedToReadTimeException, TooManyClockHandsDetectedException, InvalidListLengthsException
 
 
-def _find_angles_in_radius(side_length: float, bw_img: npt.NDArray[np.int_]) -> list[float]:
+def _find_angles_in_radius(side_length: float, binary_image: npt.NDArray[np.int_]) -> list[float]:
     """
     Finds the angles of all the clock hands inside the given black-white image
     by going along its sides clockwise and finding consecutive blocks of non-white.
     :param side_length: the length of the side of the rectangle to look for clock hands,
                          around the center.
-    :param bw_img: the black-white image.
+    :param binary_image: the black-white image.
     :return: A list of hours on the clock (in the range 0 to 60)
     """
-    sub_image = bw_img[
+    sub_image = binary_image[
                 int(IMG_WIDTH / 2) - side_length:int(IMG_WIDTH / 2) + side_length,
                 int(IMG_HEIGHT / 2) - side_length:int(IMG_HEIGHT / 2) + side_length
                 ]
     # Scanning from top-left in clock-wise order
     relevant_coordinates = (
         # Top side
-            [(i, 0) for i in range(0, 2 * side_length - 1)] +
+            [(i, 0) for i in range(0, int(2 * side_length - 1))] +
             # right side
-            [(2 * side_length - 1, i) for i in range(0, 2 * side_length - 1)] +
+            [(2 * side_length - 1, i) for i in range(0, int(2 * side_length - 1))] +
             # bottom side
-            [(i, 2 * side_length - 1) for i in range(2 * side_length - 1, 0, -1)] +
+            [(i, 2 * side_length - 1) for i in range(int(2 * side_length - 1), 0, -1)] +
             # left side
-            [(0, i) for i in range(2 * side_length - 1, 0, -1)])
+            [(0, i) for i in range(int(2 * side_length - 1), 0, -1)])
 
     found = False
     sum_x, sum_y = 0, 0
     amount = 0
     found_angles = []
     for x, y in relevant_coordinates:
-        if list(sub_image[y, x]) != [255, 255, 255]:
+        if list(sub_image[y, x]) != CLK_BACKGROUND_COLOR:
             if not found:
                 found = True
             sum_x += x
@@ -54,23 +54,34 @@ def _find_angles_in_radius(side_length: float, bw_img: npt.NDArray[np.int_]) -> 
                 # The above function doesn't work in this case as the atan returns a value
                 # between -pi to -pi/2 and adding pi/2 to it still gives a negative value / hour.
                 if val < 0:
-                    val = (atan2(y - side_length, x - side_length) + (3 * pi / 2)) / 2 / pi * 60 + 30
+                    val = (atan2(y - side_length, x - side_length) +
+                           (3 * pi / 2)) / 2 / pi * 60 + 30
                 found_angles.append(val)
             found = False
             sum_x = 0
             sum_y = 0
             amount = 0
+
+    if len(found_angles) > 3:
+        raise TooManyClockHandsDetectedException(
+            "Found {} (More than 3) angles".format(len(found_angles)))
     return found_angles
 
 
-def _find_furthest_number_in_lists(large_list: list[float], small_list: list[float]) -> float:
+def _find_furthest_number_between_lists(large_list: list[float], small_list: list[float]) -> float:
     """
-    Receives angles of 3 (in large) and 2 (in small) clock hand angles,
-    and guesses the one that is not shared unique to the large list.
-    :param large_list: A list of 3 or 2 angles.
-    :param small_list: A list of 2 or 1 angles.
+    Receives angles of m (in large) and n (in small) clock hand angles,
+    and guesses the one that is most likely unique to the large list.
+    This is needed because the same clock hand has a little bit different
+    of an angle depending on the radius you calculate it at.
+    :param large_list: A list of m angles.
+    :param small_list: A list of n<m angles.
     :return: The angles unique to the large list.
     """
+    if len(large_list) <= len(small_list):
+        raise InvalidListLengthsException("Invalid lengths. small={} large={}".format(
+            len(small_list), len(large_list))
+        )
     best_diff = -1
     best_value = None
     for angle in large_list:
@@ -95,7 +106,7 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
              the background of the clock and the clock hands.
              The solutions I thought of are to change the color
              of the clock (not the hands) to be less black,
-             and so theyll be removed when changing into bw image.
+             and so they'll be removed when changing into bw image.
              This seemed like a "cheat" solution,
              So didn't do this, I ended up needing at least
              2 of the clock hands to be smaller much than the numbers
@@ -123,13 +134,13 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
         if len(found) < count:
             count = len(found)
             if count == 1:  # Only 1 clock hand in the rectangle side
-                minute = _find_furthest_number_in_lists(last_found, found)
+                minute = _find_furthest_number_between_lists(last_found, found)
                 sec = found[0]
                 break
-            hour = _find_furthest_number_in_lists(last_found, found)
+            hour = _find_furthest_number_between_lists(last_found, found)
             if hour is not None:  # None means two clock hands overlap...
-                # hour is in range 0..60 like min and seconds.
-                # this scales it correctly.
+                # hour is in range [0..60) like minutes and seconds.
+                # this scales it to a [0,12) scale as it should be.
                 hour /= 5
             else:
                 raise FailedToReadTimeException()
