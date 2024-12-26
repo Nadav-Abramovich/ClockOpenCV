@@ -4,30 +4,26 @@
 #        without the clock itself (numbers etc) appearing in it.
 from enum import Enum
 
-IMG_WIDTH = 800
-# I assume the clock is symmetric
-IMG_HEIGHT = IMG_WIDTH
+CLOCK_IMG_PATH = "clk_470x470.jpg"
+IMG_WIDTH, IMG_HEIGHT = (800, 800)  # I assume the clock is symmetric
 
 # Image shape is used by cv2 and is in the form (num_of_rows, num_of_columns, num_of_channels)
 IMG_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)  # 3 channels for RGB
-CLOCK_IMG_PATH = "clk_470x470.jpg"
 
-class ExtendedEnum(Enum):
+
+# Note for the reviewer: The clock hands are short because
+# I do not want them to overlap with numbers on the clock.
+class HandRadii(Enum):
     @classmethod
     def list(cls):
         return list(map(lambda c: c.value, cls))
 
-
-# Hour, Minute, Second
-# Note for the reviewer: The clock hands are short because
-# I do not want them to overlap with numbers on the clock.
-class HandRadii(ExtendedEnum):
     SECONDS = 180
     MINS = 130
     HOURS = 80
 
 
-#CLK_HAND_RADII = [180, 130, 80]
+# CLK_HAND_RADII = [180, 130, 80]
 # NOTE for the reviewer:
 # I initially tried having all the clock hands be black, as i believed it was
 # more challenging and therefore more impressive. After some failures to read
@@ -41,6 +37,12 @@ class HandRadii(ExtendedEnum):
 # If i were to make the longer clock hand the different color,
 # I couldve made it overlap with the numbers, resulting in a more
 # aesthetic clock.
-CLK_HAND_COLORS = [(0, 0, 0),(0, 0, 0),(0, 0, 255)]
+
 CLK_BACKGROUND_COLOR = [255, 255, 255]
+
+# NOTE: I wouldve made these an enum too, but they
+#       have (0,0,0) or 15 multiple times,
+#       which isnt supported in an enum.
+# Hour, Minute, Second
+CLK_HAND_COLORS = [(0, 0, 0), (0, 0, 0), (0, 0, 255)]
 CLK_HAND_THICKNESS = [10, 15, 15]
