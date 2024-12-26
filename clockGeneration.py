@@ -70,12 +70,12 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
                                         CLK_HAND_THICKNESS):
         # This white "halo" around the clock hand is added in order to
         # let my code handle cases where the clock hands overlap.
-        cv.line(img,
-                img_center,
-                (int(img_center[0] + radius * cos(angle)),
-                 int(img_center[1] + radius * sin(angle))),
-                WHITE_HALO_COLOR,
-                thickness + 20)
+        #cv.line(img,
+        #        img_center,
+        #        (int(img_center[0] + radius * cos(angle)),
+        #         int(img_center[1] + radius * sin(angle))),
+         #       WHITE_HALO_COLOR,
+         #       thickness + 45)
         # This is the actual clock hand
         cv.line(img,
                 img_center,

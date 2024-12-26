@@ -13,10 +13,10 @@ from clockReading import read_the_time
 
 def main():
     img = generate_clock_image(time.localtime(time.time()))
-    read_time = read_the_time(img)
-    print("read: {}".format(read_time))
     plt.imshow(img)
     plt.show()
+    read_time = read_the_time(img)
+    print("read: {}".format(read_time))
 
 
 if __name__ == "__main__":
