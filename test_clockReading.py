@@ -21,7 +21,7 @@ def test_find_angles_in_radius_too_many_clock_hands():
         for y in range(500):
             arr[y][x] = [255, 0, 0]
     with pytest.raises(TooManyClockHandsDetectedException):
-        _find_angles_in_radius(30, arr)
+        _find_angles_in_radius(arr)
 
 
 def test_find_furthest_number_between_lists_invalid_lengths():
