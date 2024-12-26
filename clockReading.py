@@ -7,7 +7,7 @@ import cv2 as cv
 import numpy as np
 import numpy.typing as npt
 
-from consts.image import IMG_WIDTH, IMG_HEIGHT, CLK_HAND_RADII, CLK_HAND_COLORS
+from consts.image import IMG_WIDTH, IMG_HEIGHT, CLK_HAND_COLORS, HandRadii
 from exceptions import InvalidListLengthsException
 
 # Subtracting this number seems to help when both clock hands are near 0,
@@ -48,7 +48,7 @@ def _is_coordinate_outside_seconds_hand_radius(cor: tuple[float, float]) -> floa
     is inside it.
     """
     img_center = (int(IMG_WIDTH / 2), int(IMG_HEIGHT / 2))
-    return _calc_dist(cor, img_center) > CLK_HAND_RADII[0] - 10
+    return _calc_dist(cor, img_center) > HandRadii.SECONDS.value - 10
 
 
 def _find_angles_in_radius(binary_image: npt.NDArray[np.int_]) -> list[float]:
@@ -61,7 +61,7 @@ def _find_angles_in_radius(binary_image: npt.NDArray[np.int_]) -> list[float]:
     sub_image = cv.bitwise_not(binary_image)
     center = (int(IMG_WIDTH / 2), int(IMG_HEIGHT / 2))
     mask = np.zeros(sub_image.shape[:2], dtype="uint8")
-    for i in CLK_HAND_RADII[0:2]:
+    for i in HandRadii.list()[0:2]:
         cv.circle(mask, center, int(i), (255, 255, 255), 1)
     masked_image = cv.bitwise_and(sub_image, sub_image, mask=mask)
     indices = np.where(masked_image == [255])
@@ -78,7 +78,7 @@ def _find_angles_in_radius(binary_image: npt.NDArray[np.int_]) -> list[float]:
     best_min_found_cor = None
     for cord in coordinates:
         if (not _is_coordinate_outside_seconds_hand_radius(cord)
-                and not (_calc_dist(cord, center) < CLK_HAND_RADII[2] + 10)):
+                and not (_calc_dist(cord, center) < HandRadii.HOURS.value + 10)):
             fmin = _calc_angle(cord, center)
             if best_min_found_angle is None:
                 best_min_found_angle = fmin

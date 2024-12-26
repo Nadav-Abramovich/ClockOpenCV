@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from consts.image import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
-                          CLK_HAND_RADII, CLK_HAND_THICKNESS, CLK_HAND_COLORS)
+                          CLK_HAND_THICKNESS, HandRadii, CLK_HAND_COLORS)
 from exceptions import FailedToResizeException, FailedToLoadFileException
 
 
@@ -66,7 +66,7 @@ def generate_clock_image(clk_time: struct_time) -> npt.NDArray[np.int_]:
     #                        are different to each clock hand) I decided against it in this
     #                        case
     for angle, radius, color, thickness in zip([sec_angle, mn_angle, hr_angle],
-                                               CLK_HAND_RADII,
+                                               HandRadii.list(),
                                                CLK_HAND_COLORS,
                                                CLK_HAND_THICKNESS):
         # This white "halo" around the clock hand is added in order to
