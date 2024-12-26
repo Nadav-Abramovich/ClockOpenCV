@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib import pyplot as plt
 
-from consts.image import IMG_WIDTH, IMG_HEIGHT, CLK_BACKGROUND_COLOR, CLK_HAND_RADII
+from consts.image import IMG_WIDTH, IMG_HEIGHT, CLK_BACKGROUND_COLOR, CLK_HAND_RADII, CLK_HAND_COLORS
 from exceptions import FailedToReadTimeException, TooManyClockHandsDetectedException, InvalidListLengthsException
 
 
@@ -42,11 +42,11 @@ def _find_angles_in_radius(side_length: float, binary_image: npt.NDArray[np.int_
               (255, 255, 255),
               1
               )
-    cv.circle(mask, cntr,
-              int(CLK_HAND_RADII[2]),
-              (255, 255, 255),
-              1
-              )
+    # cv.circle(mask, cntr,
+    #           int(CLK_HAND_RADII[2]),
+    #           (255, 255, 255),
+    #           1
+    #           )
     masked = cv.bitwise_and(sub_image, sub_image, mask=mask)
     #plt.imshow(masked)
     #plt.show()
@@ -89,39 +89,53 @@ def _find_angles_in_radius(side_length: float, binary_image: npt.NDArray[np.int_
                 b_fmin = fmin
                 b_pt = coordinates[i]
 
-    b_fhour = None
-    b_hourpt = None
-    for i in range(len(coordinates)):
-        if hour[i]:
-            fhour = (atan2(coordinates[i][0] - cntr[0], coordinates[i][1] - cntr[1]) + pi / 2) / 2 / pi * 60
-            # in case our x,y is in the fourth quadrant of the xy plane (hours 9 - 12)
-            # The above function doesn't work in this case as the atan returns a value
-            # between -pi to -pi/2 and adding pi/2 to it still gives a negative value / hour.
-            if fhour < 0:
-                fhour = (atan2(coordinates[i][0] - cntr[0], coordinates[i][1] - cntr[1]) +
-                        (3 * pi / 2)) / 2 / pi * 60 + 30
-            #fhour = math.ceil(fhour)%60
-            pt = coordinates[i]
-            if b_fhour is None:
-                b_fhour = fhour
-                b_hourpt = coordinates[i]
-            elif ((_calc_dist(b_pt, b_hourpt)**2+_calc_dist(pt_second, b_hourpt)**2) <
-                  (_calc_dist(b_pt, pt)**2+_calc_dist(pt_second, pt))**2):
-                b_fhour = fhour
-                b_hourpt = pt
+    # b_fhour = None
+    # b_hourpt = None
+    # for i in range(len(coordinates)):
+    #     if hour[i]:
+    #         fhour = (atan2(coordinates[i][0] - cntr[0], coordinates[i][1] - cntr[1]) + pi / 2) / 2 / pi * 60
+    #         # in case our x,y is in the fourth quadrant of the xy plane (hours 9 - 12)
+    #         # The above function doesn't work in this case as the atan returns a value
+    #         # between -pi to -pi/2 and adding pi/2 to it still gives a negative value / hour.
+    #         if fhour < 0:
+    #             fhour = (atan2(coordinates[i][0] - cntr[0], coordinates[i][1] - cntr[1]) +
+    #                     (3 * pi / 2)) / 2 / pi * 60 + 30
+    #         #fhour = math.ceil(fhour)%60
+    #         pt = coordinates[i]
+    #         if b_fhour is None:
+    #             b_fhour = fhour
+    #             b_hourpt = coordinates[i]
+    #         elif ((_calc_dist(b_pt, b_hourpt)**2+_calc_dist(pt_second, b_hourpt)**2) <
+    #               (_calc_dist(b_pt, pt)**2+_calc_dist(pt_second, pt))**2):
+    #             b_fhour = fhour
+    #             b_hourpt = pt
 
     if(fsecond<30):
         b_fmin = math.ceil(b_fmin-0.5)%60
     else:
         b_fmin = math.floor(b_fmin-0.5) % 60
 
-    if (b_fmin < 30):
-        b_fhour = math.ceil(b_fhour/5) % 12
-    else:
-        b_fhour = math.floor(b_fhour/5) % 12
+    # if (b_fmin < 30):
+    #     b_fhour = math.ceil(b_fhour/5) % 12
+    # else:
+    #     b_fhour = math.floor(b_fhour/5) % 12
 
 
-    return [b_fhour, b_fmin, fsecond]
+    return [0, b_fmin, fsecond]
+
+def find_hour_red(binary_image: npt.NDArray[np.int_]) -> float:
+    cntr = (int(IMG_WIDTH / 2), int(IMG_HEIGHT / 2))
+    # plt.imshow(binary_image)
+    # plt.show()
+    X, Y = np.where(np.all(binary_image == CLK_HAND_COLORS[2], axis=2))
+    avg_y = sum(Y) / len(Y)
+    avg_x = sum(X) / len(X)
+    fmin = (atan2(avg_x - cntr[0], avg_y - cntr[1]) + pi / 2) / 2 / pi * 60
+    if fmin < 0:
+        fmin = (atan2(avg_x - cntr[0], avg_y - cntr[1]) +
+                (3 * pi / 2)) / 2 / pi * 60 + 30
+
+    return fmin
 
 
 def _find_angles_in_radius_bad(side_length: float, binary_image: npt.NDArray[np.int_]) -> list[float]:
@@ -306,7 +320,7 @@ def read_the_time(img: npt.NDArray[np.int_]) -> struct_time:
     # for i in radii:
     #    found[i] = _find_angles_in_radius(i, bw_img)
     found = _find_angles_in_radius(1, bw_img)
-
+    found[0] = round((find_hour_red(img)-(found[1]/12))/5)
     """if len(found) < count:
             count = len(found)
             if count == 1:  # Only 1 clock hand in the rectangle side
