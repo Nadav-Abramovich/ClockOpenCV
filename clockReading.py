@@ -7,7 +7,7 @@ import cv2 as cv
 import numpy as np
 import numpy.typing as npt
 
-from consts.image import IMG_WIDTH, IMG_HEIGHT, CLK_HAND_COLORS, HandRadii
+from imageConsts import IMG_WIDTH, IMG_HEIGHT, CLK_HAND_COLORS, HandRadii
 from exceptions import InvalidListLengthsException
 
 # Subtracting this number seems to help when both clock hands are near 0,

@@ -6,8 +6,8 @@ import cv2 as cv
 import numpy as np
 import numpy.typing as npt
 
-from consts.image import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
-                          CLK_HAND_THICKNESS, HandRadii, CLK_HAND_COLORS)
+from imageConsts import (IMG_WIDTH, IMG_HEIGHT, CLOCK_IMG_PATH,
+                         CLK_HAND_THICKNESS, HandRadii, CLK_HAND_COLORS)
 from exceptions import FailedToResizeException, FailedToLoadFileException
 
 
