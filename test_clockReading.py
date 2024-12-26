@@ -2,26 +2,11 @@ import datetime
 import math
 import time
 
-import numpy as np
 import pytest
 
 from clockGeneration import generate_clock_image
-from clockReading import _find_angles_in_radius, _find_furthest_number_between_lists, read_the_time
-from consts.image import CLK_BACKGROUND_COLOR
-from exceptions import TooManyClockHandsDetectedException, \
-    InvalidListLengthsException
-
-
-def test_find_angles_in_radius_too_many_clock_hands():
-    arr = np.ndarray((500, 500, 3), np.uint8)
-    for x in range(500):
-        for y in range(500):
-            arr[y][x] = CLK_BACKGROUND_COLOR
-    for x in range(0, 500, 10):
-        for y in range(500):
-            arr[y][x] = [255, 0, 0]
-    with pytest.raises(TooManyClockHandsDetectedException):
-        _find_angles_in_radius(arr)
+from clockReading import _find_furthest_number_between_lists, read_the_time
+from exceptions import InvalidListLengthsException
 
 
 def test_find_furthest_number_between_lists_invalid_lengths():
@@ -33,20 +18,20 @@ def test_read_the_time_test_cases():
     """
     Edge case tests read_the_time.
     """
-   # Note for the reviewer - in principle it would probably be better to also have
-   # unit tests for clockReading (tests on a static input, that are not dependent on
-   # the clockGenerator. We could use some kind of serialization and save its outputs
-   # in a way we can load for these unit tests. Since there is a time constraint
-   # and this is no long term / multi people I skip them though.
-    #t=read_the_time(generate_clock_image(time.strptime("05 05 05","%H %M %S")))
+    # Note for the reviewer - in principle it would probably be better to also have
+    # unit tests for clockReading (tests on a static input, that are not dependent on
+    # the clockGenerator. We could use some kind of serialization and save its outputs
+    # in a way we can load for these unit tests. Since there is a time constraint
+    # and this is no long term / multi people I skip them though.
+    # t=read_the_time(generate_clock_image(time.strptime("05 05 05","%H %M %S")))
     for h in range(12):
-        for m in range(1,60,2):
-            for s in range(0,60,12):
-                org=time.strptime("{} {} {}".format(h, m, s), "%H %M %S")
-                img=generate_clock_image(org)
+        for m in range(1, 60, 2):
+            for s in range(0, 60, 12):
+                org = time.strptime("{} {} {}".format(h, m, s), "%H %M %S")
+                img = generate_clock_image(org)
                 t = read_the_time(img)
-                got=datetime.datetime(*t[:6])
-                org=datetime.datetime(*org[:6])
-                assert math.fabs(got.second-org.second) < 2
-                assert math.fabs(got.minute-org.minute) < 2
-                assert math.fabs(got.hour-org.hour) < 1
+                got = datetime.datetime(*t[:6])
+                org = datetime.datetime(*org[:6])
+                assert math.fabs(got.second - org.second) < 2
+                assert math.fabs(got.minute - org.minute) < 2
+                assert math.fabs(got.hour - org.hour) < 1

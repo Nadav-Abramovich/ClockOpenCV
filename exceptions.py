@@ -7,8 +7,5 @@ class FailedToLoadFileException(Exception):
 class FailedToReadTimeException(Exception):
     pass
 
-class TooManyClockHandsDetectedException(Exception):
-    pass
-
 class InvalidListLengthsException(Exception):
     pass
